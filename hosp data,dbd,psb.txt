@@ -1,0 +1,54 @@
+ PRINT NOGEN                                         
+ DBD NAME=HOSDBD,ACCESS=HISAM                        
+ DATASET DD1=HOSPDB,OVFLW=HOSPFLW                    
+ SEGM NAME=HOSPITAL,PARENT=0,BYTES=60                
+ FIELD NAME=(HOSPNAME,SEQ,U),BYTES=20,START=1,TYPE=C 
+ SEGM NAME=WARD,PARENT=HOSPITAL,BYTES=31             
+ FIELD NAME=(WARDNO,SEQ,U),START=1,BYTES=2,TYPE=C    
+ FIELD NAME=BEDAVIL,START=3,BYTES=3,TYPE=C           
+ FIELD NAME=WARDTYPE,START=6,BYTES=20,TYPE=C         
+ SEGM NAME=PATIENT,PARENT=WARD,BYTES=40              
+ FIELD NAME=(BEDIDNT,SEQ,U),START=1,BYTES=4,TYPE=C   
+ FIELD NAME=PATNAME,START=5,BYTES=20,TYPE=C          
+ FIELD NAME=DATADMT,START=26,BYTES=10,TYPE=C         
+ SEGM  NAME=SYMPTOM,PARENT=PATIENT,BYTES=30          
+ FIELD NAME=(SYMDATE,SEQ,U),START=1,BYTES=6,TYPE=C   
+ FIELD NAME=DIGNOSE,START=7,BYTES=20,TYPE=C          
+ SEGM NAME=TRETMENT,PARENT=PATIENT,BYTES=30          
+ FIELD NAME=(TRDATE,SEQ,U),START=1,BYTES=6,TYPE=C    
+ FIELD NAME=TRTTYPE,START=7,BYTES=20,TYPE=C          
+ SEGM NAME=DOCTOR,PARENT=PATIENT,BYTES=40,TYPE=C     
+ FIELD NAME=DOCNAME,START=1,BYTES=20,TYPE=C          
+ FIELD NAME=SPECIALT,START=21,BYTES=20,TYPE=C        
+ SEGM NAME=FACILITY,PARENT=HOSPITAL,BYTES=26         
+ FIELD NAME=FACTYPE,START=1,BYTES=20,TYPE=C          
+ FIELD NAME=FACAVIAL,START=21,BYTES=3,TYPE=C         
+ DBDGEN                                              
+ FINISH                                              
+ END     
+
+
+HOSPITAL APOLLO CHENNAI                                    
+WARD     W1YESSPECIAL                                      
+PATIENT  BN01SRI LAKSHMI K       25/04/2013                
+SYMPTOM  120112BREAST CANCER                               
+TRETMENT 260413CHAEMO THERAPY                              
+DOCTOR   MURALI MOHAN        ONCHOLOGIST                   
+PATIENT  BN02GAURAV PATIL        17/04/2013                
+SYMPTOM  160413STOMACH PAIN                                
+TRETMENT 180413ACM INJECTIONS                              
+DOCTOR   SRIVIDYA K          GASTROENTEROLOGIST            
+FACILITY X-RAY SCAN          YES                           
+FACILITY MRI SCAN 3.5 G      YES                           
+FACILITY ULTRA SOUND SCAN    YES                           
+HOSPITAL APOLLO MUMBAI                                     
+WARD     W1YESNORMAL                                       
+PATIENT  BN01GANGADHARA RAO S    30/04/2013                
+SYMPTOM  130512ORTHOPEDIC KNEE REPL                        
+TRETMENT 150212KNEE SURGEORY                               
+DOCTOR   JHON HOPKIN         ORTHOPEDIC                    
+FACILITY X-RAY SCAN          YES                           
+FACILITY MRI SCAN 2 G        YES                           
+
+
+                                            

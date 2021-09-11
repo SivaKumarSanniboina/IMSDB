@@ -1,0 +1,464 @@
+1)
+
+
+UNLOAD DOCTOR :
+
+
+UNLDDOCT:PROCEDURE (DB_PTR_PCB) OPTIONS(MAIN);        
+    DCL ONCODE        BUILTIN;                        
+    DCL DB_PTR_PCB    POINTER;                        
+    DCL PLITDLI       EXTERNAL ENTRY;                 
+    DCL 01 DOC_REC,                                 
+        05 SSA            CHAR(38),                  
+        05 SEG_IO_AREA    CHAR(42);                   
+    DCL 01 OUTREC,                                    
+        05 DOCTOR         CHAR(40),                   
+        05 FILLER         CHAR(40) INIT(' ');         
+    DCL EOF1              FIXED BIN(31) INIT(0);      
+    DCL OUTFILE FILE OUTPUT RECORD;                   
+    DCL ENDFILE BUILTIN;                              
+    DCL 01 DLI_FUNCTIONS,                             
+        05 DLI_FUNCISRT  CHAR(04) INIT('ISRT'),       
+        05 DLI_FUNCGU    CHAR(04) INIT('GU  '),       
+        05 DLI_FUNCGN    CHAR(04) INIT('GN  ');       
+    DCL 01 PCB_MASK      BASED(DB_PTR_PCB),           
+        05 DBD_NAME      CHAR(08),                    
+        05 SEG_LEVEL     CHAR(02),                    
+        05 STATUS_CODE   CHAR(02),                    
+        05 PROC_OPT      CHAR(04),                    
+        05 FILLER6       FIXED BIN (31),              
+        05 SEG_NAME      CHAR(08),                    
+        05 KEY_FDBK      FIXED BIN(31),               
+        05 NUM_SENSEG    FIXED BIN (31),              
+        05 KEY_FDBK_AREA,                             
+            10 HOSP_NAME_KEY    CHAR(20),             
+            10 WARD_NAME_KEY    CHAR(02),             
+            10 BED_IDENT_KEY    CHAR(04),             
+            10 TRT_IDENT_KEY    CHAR(06),             
+            10 SYM_IDENT_KEY    CHAR(06);             
+    DCL THREE        FIXED BIN (31) INIT(3);          
+    DCL FOUR         FIXED BIN (31) INIT(4);          
+    DCL FIVE         FIXED BIN (31) INIT(5);          
+    DCL SIX          FIXED BIN (31) INIT(6);
+    DCL SEVEN        FIXED BIN (31) INIT(7);
+    DCL 01 HOSP_SSA,                                               
+       05 SEGNAME        CHAR(08) INIT('HOSPITAL'),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('HOSPNAME'),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(20) INIT('APOLLO CHENNAI      '),   
+       05 FILLER2        CHAR(01) INIT(')');                      
+   DCL 01 WARD_SSA,                                               
+       05 SEGNAME        CHAR(08) INIT('WARD    '),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('WARDNO  '),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(02) INIT('W1'),                     
+       05 FILLER2        CHAR(01) INIT(')');                      
+   DCL 01 PATIENT_SSA,                                            
+       05 SEGNAME        CHAR(08) INIT('PATIENT '),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('BEDIDNT '),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(04) INIT('BN01'),                   
+       05 FILLER2        CHAR(01) INIT(')'); 
+   DCL DOCSSA    CHAR(9) INIT('DOCTOR   ');  
+   DCL 01 DOCSEG,
+       05 DOCNAME	CHAR(15),
+       05 DOCAGE    	CHAR(3),
+       05 DOCSPCL	CHAR(20);                    
+                         
+ CALL P500_DISPLAY;                                                  
+ P400_DISPLAY_ERROR: PROC;                                           
+     PUT SKIP LIST('ERROR ENCOUNTERED - DETAIL FOLLOWS');            
+     PUT SKIP LIST('SEG_IO_AREA : ' || SEG_IO_AREA);                 
+     PUT SKIP LIST('DBD_NAME1   : ' || DBD_NAME);                    
+     PUT SKIP LIST('SEG_LEVEL1   : '|| SEG_LEVEL);                   
+     PUT SKIP LIST('STATUS_CODE   : ' || STATUS_CODE);               
+     PUT SKIP LIST('PROC_OPT1   : ' || PROC_OPT);                    
+     PUT SKIP LIST('SEG_NAME1   : ' || SEG_NAME);                    
+     PUT SKIP LIST('KEY_FDBK1   : ' || KEY_FDBK);                    
+     PUT SKIP LIST('NUM_SENSEG1   : ' || NUM_SENSEG);                
+     PUT SKIP LIST('KEY_FDBK_AREA1   : ' || KEY_FDBK_AREA);          
+ END P400_DISPLAY_ERROR;                                             
+ P500_DISPLAY: PROC;                                                 
+ OPEN FILE(OUTFILE);                                                 
+     PUT SKIP LIST('INSIDE DISPLAY METHOD');                         
+     CALL PLITDLI(SEVEN,DLI_FUNCGU,PCB_MASK,SEG_IO_AREA,HOSP_SSA,WARD_SSA,PATIENT_SSA,DOCSSA);     
+     DO WHILE(STATUS_CODE = ' ');                                    
+         IF DOC_SEG.DOCAGE > '30' THEN                                       
+         DO;                                                             
+             PUT SKIP LIST('SUCCESSFULL RETRIEVAL:' || SEG_IO_AREA);     
+             OUTREC.DOCTOR = SEG_IO_AREA;                                  
+             WRITE FILE(OUTFILE) FROM(OUTREC);                           
+         END;                                                            
+         ELSE                                                            
+            CALL P400_DISPLAY_ERROR;                                     
+            CALL PLITDLI(FOUR,DLI_FUNCGN,PCB_MASK,SEG_IO_AREA,DOCSSA);  
+    END;                                                            
+ END P500_DISPLAY;                                                   
+ CLOSE FILE(OUTFILE);                                                
+ END UNLDDOCT;
+
+
+
+
+2)
+
+LOAD DOCTOR :
+
+
+LOADDOCT: PROCEDURE (DB_PTR_PCB) OPTIONS(MAIN);                         
+                                                                     
+    DCL ONCODE                   BUILTIN;                            
+    DCL DB_PTR_PCB               POINTER;                            
+    DCL PLITDLI                  EXTERNAL ENTRY; 
+    DCL 01 OUTREC,                                    
+        05 DOCTOR         CHAR(40),                   
+        05 FILLER         CHAR(40) INIT(' ');                      
+    DCL 01 INSRT_REC,                                                
+           05 SEG_IO_AREA        CHAR(38),                           
+           05 FILLER             CHAR(42);                           
+    DCL EOF1                     FIXED BIN(31) INIT(0);              
+    DCL INFILE FILE INPUT RECORD;                                    
+    DCL ENDFILE BUILTIN;                                             
+                                                                     
+     ON ENDFILE(INFILE) BEGIN;                                       
+       EOF1 = 1;                                                     
+       PUT SKIP LIST ('END OF FILE ON INFILE');                      
+     END;                                                            
+    DCL 01 DLI_FUNCTIONS,                                            
+           05 DLI_FUNCISRT       CHAR(04) INIT ('ISRT'),             
+                                                                     
+    DCL 01 PCB_MASK              BASED(DB_PTR_PCB),                  
+           05 DBD_NAME           CHAR(08),                           
+           05 SEG_LEVEL          CHAR(02),                           
+           05 STATUS_CODE        CHAR(02),                           
+           05 PROC_OPT           CHAR(04),                           
+           05 FILLER6            FIXED BIN (31),                     
+           05 SEG_NAME           CHAR(08),                           
+           05 KEY_FDBK           FIXED BIN (31),                     
+           05 NUM_SENSEG         FIXED BIN (31),                        
+           05 KEY_FDBK_AREA,                                            
+              10 HOSP_NAME_KEY   CHAR(20),                              
+              10 WARD_NAME_KEY   CHAR(02),                              
+              10 BED_IDENT_KEY   CHAR(04),                              
+              10 TRT_IDENT_KEY   CHAR(06),                              
+              10 SYM_IDENT_KEY   CHAR(06);                              
+                                                                        
+    DCL THREE                    FIXED BIN (31) INIT(3);                
+    DCL FOUR                     FIXED BIN (31) INIT(4);                
+    DCL FIVE                     FIXED BIN (31) INIT(5);                
+    DCL SIX                      FIXED BIN (31) INIT(6);
+    DCL SEVEN        		 FIXED BIN (31) INIT(7);                
+    DCL 01 HOSP_SSA,                                               
+       05 SEGNAME        CHAR(08) INIT('HOSPITAL'),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('HOSPNAME'),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(20) INIT('APOLLO CHENNAI      '),   
+       05 FILLER2        CHAR(01) INIT(')');                      
+   DCL 01 WARD_SSA,                                               
+       05 SEGNAME        CHAR(08) INIT('WARD    '),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('WARDNO  '),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(02) INIT('W1'),                     
+       05 FILLER2        CHAR(01) INIT(')');                      
+   DCL 01 PATIENT_SSA,                                            
+       05 SEGNAME        CHAR(08) INIT('PATIENT '),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('BEDIDNT '),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(04) INIT('BN01'),                   
+       05 FILLER2        CHAR(01) INIT(')'); 
+   DCL DOCSSA    CHAR(9) INIT('DOCTOR   ');                         
+   DCL VALIDFLAG FIXED BIN(31) INIT('1'B);
+ 
+ CALL P100_INITIALIZATION;                                              
+ CALL P200_MAINLINE;                                                    
+ CALL P300_TERMINATION;                                                 
+                                                                        
+ P100_INITIALIZATION: PROC;                                                                                                                     
+     PUT SKIP LIST ('INSRT: INSERT INTO DOCTOR DB');                  
+     INSRT_REC = '';    
+     OPEN FILE(OUTFILE);                                                                                                                   
+     OPEN FILE (INFILE);                                                
+     READ FILE (INFILE) INTO (INSRT_REC);                                                                                                       
+ END P100_INITIALIZATION;                                              
+                                                                        
+ P200_MAINLINE: PROC;                                                                                                                          
+     DO  WHILE (EOF1 = 0);
+         IF MAXLENGTH(INREC.DOCID) = 4 THEN
+
+  	     IF INREC.GENDER ~= 'M' || INREC.GENDER = 'F' THEN
+
+		 IF INREC.SALARY > 0 THEN
+		 DO;                                              
+         	     CALL PLITDLI (SEVEN,DLI_FUNCISRT,PCB_MASK,SEG_IO_AREA,HOSP_SSA,WARD_SSA,PATIENT_SSA,DOCSSA);                                                               
+       		     IF STATUS_CODE = '  ' THEN                                       
+         	                                                                 
+           		 PUT SKIP LIST ('SUCCESSFUL INSERT :' || SEG_IO_AREA);        
+           		                         
+        	  END;                                                          
+       		  ELSE 
+		      PUT SKIP LIST('INVALID SALARY');
+	     ELSE
+		 PUT SKIP LIST('INVALID GENDER ENTRY')
+	 ELSE
+	     PUT SKIP LIST('INVALID DOC ID'); 
+     END;
+	 IF VALIDFLAG = '0'B THEN
+	 DO;
+	     OUTREC.DOCTOR = SEG_IO_AREA;
+	     WRITE FILE(OUTFILE) FROM(OUTREC);
+	 END;                                                                                                                                                                                                         
+ END P200_MAINLINE;                                                    
+                                                                        
+ P300_TERMINATION: PROC;                                               
+                                                                        
+      CLOSE FILE(INFILE); 
+      CLOSE FILE(OUTFILE);                                              
+      PUT SKIP LIST ('INSERT - ENDED SUCCESSFULLY');                     
+                                                                        
+ END P300_TERMINATION;                                                                                                                         
+ END LOADDOCT;
+
+
+
+
+3)
+UPDATE DOCTOR
+
+UPDATEDC:PROCEDURE(DB_PTR_PCB) OPTIONS(MAIN);           
+   DCL ONCODE            BUILTIN;                     
+   DCL DB_PTR_PCB        POINTER;                     
+   DCL PLITDLI           EXTERNAL ENTRY;              
+   DCL ENDFILE BUILTIN;                               
+   DCL 01 DOCTOR_REC,                                
+       05 DOCNAME        CHAR(20),                    
+       05 DOCSPCL        CHAR(20),                    
+       05 DOCEMAIL       CHAR(20),                    
+       05 FILLER         CHAR(20);                    
+   DCL 01 DLI_FUNCTIONS,                              
+       05 DLI_FUNCISRT   CHAR(04) INIT('ISRT'),       
+       05 DLI_FUNCGU     CHAR(04) INIT('GU  '),       
+       05 DLI_FUNCGN     CHAR(04) INIT('GN  '),       
+       05 DLI_FUNCGHU    CHAR(04) INIT('GHU '),       
+       05 DLI_FUNCREPL   CHAR(04) INIT('REPL');       
+   DCL 01 PCB_MASK       BASED(DB_PTR_PCB),           
+       05 DBD_NAME       CHAR(08),                    
+       05 SEG_LEVEL      CHAR(02),                    
+       05 STATUS_CODE    CHAR(02),                    
+       05 PROC_OPT       CHAR(04),                    
+       05 FILLER6        FIXED BIN (31),              
+       05 SEG_NAME       CHAR(08),                    
+       05 KEY_FDBK       FIXED BIN (31),              
+       05 NUM_SENSEG     FIXED BIN (31),              
+       05 KEY_FDBK_AREA,                              
+           10 HOSP_NAME_KEY    CHAR(20),              
+           10 WARD_NAME_KEY    CHAR(02),              
+           10 BED_IDENT_KEY    CHAR(04),              
+           10 TRT_IDENT_KEY    CHAR(06),              
+           10 SYM_IDENT_KEY    CHAR(06);              
+   DCL THREE             FIXED BIN (31) INIT(3);      
+   DCL FOUR              FIXED BIN (31) INIT(4);      
+   DCL FIVE              FIXED BIN (31) INIT(5);      
+   DCL SIX               FIXED BIN (31) INIT(6);
+   DCL SEVEN             FIXED BIN (31) INIT(7);      
+   DCL 01 HOSP_SSA,                                               
+       05 SEGNAME        CHAR(08) INIT('HOSPITAL'),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('HOSPNAME'),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(20) INIT('APOLLO CHENNAI      '),   
+       05 FILLER2        CHAR(01) INIT(')');                      
+   DCL 01 WARD_SSA,                                               
+       05 SEGNAME        CHAR(08) INIT('WARD    '),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('WARDNO  '),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(02) INIT('W1'),                     
+       05 FILLER2        CHAR(01) INIT(')');                      
+   DCL 01 PATIENT_SSA,                                            
+       05 SEGNAME        CHAR(08) INIT('PATIENT '),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('BEDIDNT '),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(04) INIT('BN01'),                   
+       05 FILLER2        CHAR(01) INIT(')');
+   DCL 01 DOCTOR_SSA,
+       05 SEGNAME        CHAR(08) INIT('DOCTOR  '),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('DOCNAME '),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(04) INIT('JHON HOPKIN         '),                   
+       05 FILLER2        CHAR(01) INIT(')');                      
+CALL P100_UPDATE;                                                 
+P100_UPDATE:PROC;                                                 
+    CALL PLITDLI(SEVEN,DLI_FUNCGHU,PCB_MASK,PATIENT_REC,HOSP_SSA,       
+                 WARD_SSA,PATIENT_SSA,DOCTOR_SSA);                               
+    PUT SKIP LIST('BEFORE UPDATE',DOCTOR_REC);                       
+    DOCTOR_REC.DOCEMAIL = 'SIVAKUMAR1@GMAIL.COM';                       
+    PUT SKIP LIST(STATUS_CODE);                                   
+    CALL PLITDLI(THREE,DLI_FUNCREPL,PCB_MASK,DOCTOR_REC);            
+    IF(STATUS_CODE = ' ') THEN                                        
+    DO;                                                               
+        CALL PLITDLI(SIX,DLI_FUNCGU,PCB_MASK,DOCTOR_REC,HOSP_SSA,    
+                     WARD_SSA,PATIENT_SSA,DOCTOR_SSA);                           
+        PUT SKIP LIST("AFTER UPDATE",DOCTOR_REC);                    
+    END;                              
+    ELSE                              
+        PUT SKIP LIST(STATUS_CODE);   
+END P100_UPDATE;                  
+    PUT SKIP LIST("UPDATE - DONE"); 
+END UPDATEDC;
+
+
+
+
+
+
+4)
+
+DELETE DOCTOR :
+
+DELETEDC:PROCEDURE(DB_PTR_PCB) OPTIONS(MAIN);
+    DCL ONCODE                   BUILTIN;                              
+    DCL DB_PTR_PCB               POINTER;                              
+    DCL PLITDLI                  EXTERNAL ENTRY;  
+    DCL 01 DOCTOR_REC,                                
+        05 DOCNAME        CHAR(20),                    
+        05 DOCSPCL        CHAR(20),                    
+        05 DOCSTATUS      CHAR(10),                    
+        05 FILLER         CHAR(30);                                                                                                                                              
+    DCL 01 DLI_FUNCTIONS,                                               
+          05 DLI_FUNCISRT       CHAR(04) INIT ('ISRT'),                
+          05 DLI_FUNCGU         CHAR(04) INIT ('GU  '),                
+          05 DLI_FUNCGN         CHAR(04) INIT ('GN  '),                
+          05 DLI_FUNCGHU        CHAR(04) INIT ('GHU '),                
+          05 DLI_FUNCGNP        CHAR(04) INIT ('GNP '),                
+          05 DLI_FUNCREPL       CHAR(04) INIT ('REPL'),                
+          05 DLI_FUNCDLET       CHAR(04) INIT ('DLET'),                
+          05 DLI_FUNCXRST       CHAR(04) INIT ('XRST'),                
+          05 DLI_FUNCCHKP       CHAR(04) INIT ('CHKP'),                
+          05 DLI_FUNCROLL       CHAR(04) INIT ('ROLL');   
+                                                                      
+     DCL 01 PCB_MASK             BASED(DB_PTR_PCB),                   
+           05 DBD_NAME           CHAR(08),                            
+           05 SEG_LEVEL          CHAR(02),                            
+           05 STATUS_CODE        CHAR(02),                            
+           05 PROC_OPT           CHAR(04),                            
+           05 FILLER6            FIXED BIN (31),                      
+           05 SEG_NAME           CHAR(08),                            
+           05 KEY_FDBK           FIXED BIN (31),                      
+           05 NUM_SENSEG         FIXED BIN (31),                      
+           05 KEY_FDBK_AREA,                                          
+              10 HOSP_NAME_KEY   CHAR(20),                            
+              10 WARD_NAME_KEY   CHAR(02),                            
+              10 BED_IDENT_KEY   CHAR(04),                            
+              10 TRT_IDENT_KEY   CHAR(06),                            
+              10 SYM_IDENT_KEY   CHAR(06);                            
+                                                                      
+    DCL THREE                    FIXED BIN (31) INIT(3);              
+    DCL FOUR                     FIXED BIN (31) INIT(4);              
+    DCL FIVE                     FIXED BIN (31) INIT(5);              
+    DCL SIX                      FIXED BIN (31) INIT(6);              
+    DCL SEVEN             FIXED BIN (31) INIT(7);      
+   DCL 01 HOSP_SSA,                                               
+       05 SEGNAME        CHAR(08) INIT('HOSPITAL'),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('HOSPNAME'),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(20) INIT('APOLLO CHENNAI      '),   
+       05 FILLER2        CHAR(01) INIT(')');                      
+   DCL 01 WARD_SSA,                                               
+       05 SEGNAME        CHAR(08) INIT('WARD    '),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('WARDNO  '),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(02) INIT('W1'),                     
+       05 FILLER2        CHAR(01) INIT(')');                      
+   DCL 01 PATIENT_SSA,                                            
+       05 SEGNAME        CHAR(08) INIT('PATIENT '),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('BEDIDNT '),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(04) INIT('BN01'),                   
+       05 FILLER2        CHAR(01) INIT(')');
+   DCL 01 DOCTOR_SSA,
+       05 SEGNAME        CHAR(08) INIT('DOCTOR  '),               
+       05 FILLER1        CHAR(01) INIT('('),                      
+       05 FIELD          CHAR(08) INIT('DOCNAME '),               
+       05 OPER           CHAR(02) INIT(' ='),                     
+       05 FIELD_VAL      CHAR(04) INIT('JHON HOPKIN         '),                   
+       05 FILLER2        CHAR(01) INIT(')');                   
+ DCL SEG_IO_AREA  	 CHAR(20);
+ DCL SEG_DELETE_IO_AREA  CHAR(20);
+                                                                   
+ CALL P100_DELETE; 
+ CALL P200_DISPLAY_ERROR: PROC;
+
+ P200_DISPLAY_ERROR: PROC;                                                                                                                      
+     PUT SKIP LIST ('ERROR ENCOUNTERED - DETAIL FOLLOWS');              
+     PUT SKIP LIST ('SEG_IO_AREA   :' || SEG_IO_AREA);                  
+     PUT SKIP LIST ('DBD_NAME1     :' || DBD_NAME);                     
+     PUT SKIP LIST ('SEG_LEVEL1    :' || SEG_LEVEL);                    
+     PUT SKIP LIST ('STATUS_CODE   :' || STATUS_CODE);                  
+     PUT SKIP LIST ('PROC_OPT1     :' || PROC_OPT);                     
+     PUT SKIP LIST ('SEG_NAME1     :' || SEG_NAME);                     
+     PUT SKIP LIST ('KEY_FDBK1     :' || KEY_FDBK);                     
+     PUT SKIP LIST ('NUM_SENSEG1   :' || NUM_SENSEG);                   
+     PUT SKIP LIST ('KEY_FDBK_AREA1:' || KEY_FDBK_AREA);  
+ P200_DISPLAY_ERROR                                                       
+                                                                        
+ P100_DELETE: PROC;                                                                                                                                                                    
+      CALL PLITDLI (SEVEN,                                               
+                  DLI_FUNCGHU,                                         
+                  PCB_MASK,                                             
+                  SEG_IO_AREA,                                          
+                  HOSP_SSA,WARD_SSA,PATIENT_SSA,DOCTOR_SSA);                                                                                                        
+          DOCTOR_REC.DOCSTATUS = 'INACTIVE            ';                       
+    	  PUT SKIP LIST(STATUS_CODE);
+          CALL PLITDLI (THREE,                                               
+                  DLI_FUNCDLET,                                         
+                  PCB_MASK,                                             
+                  SEG_IO_AREA);                                                 
+                                                    
+           IF (STATUS_CODE =' ') THEN
+           DO;
+               PUT SKIP LIST('DELETED SUCCESSFULL');
+                                  
+           END;                                                            
+           ELSE                                                              
+           CALL P200_DISPLAY_ERROR;                                        
+    END;                                                                                                                                       
+ END P100_DELETE;                                                                                                                            
+     PUT SKIP LIST ('DELETE DOCTOR - ENDED SUCCESSFULLY');                                                                       
+ END DELETEDC;
+
+
+
+
+5)
+
+a)GA
+
+b)AI
+
+c)GK
+
+d)GB
+
+e)II
+
+f)DJ
+
+g)A segment level field stores the level of the segment that was processed.When a segment is retrieved successfully, 
+  the level number of retrieved segment is stored here.
+
+i)D
+
+j)When we issue a GU call without any SSAs, DL/I returns the first occurrence of the root segment in the database.
+  If some SSAs at intermediate levels are not mentioned in the call, 
+  then DL/I uses either the established position or the default value of an unqualified SSA for the segment.
